@@ -4,26 +4,32 @@ import torch
 import pandas as pd
 from PIL import Image
 import numpy as np
-import matplotlib.pyplot as plt
-from torch.utils.data import Dataset, DataLoader
-from torchvision import transforms, utils
+from torch.utils.data import Dataset
 import torch
 import torch.nn as nn
-from transformers import ViTModel
-from torchinfo import summary  # 
 # Ignore warnings
 import warnings
 warnings.filterwarnings("ignore")
 import random
-import time
-from transformers import ViTImageProcessor
+from transformers import (
+    ViTImageProcessor,
+    ViTModel,
+    ViTConfig,
+    ViTPreTrainedModel,
+    Trainer, 
+    TrainingArguments,
+    )
 from sklearn.model_selection import train_test_split
 import sys
 from typing import List
-from transformers import ViTConfig,ViTPreTrainedModel
-from transformers import Trainer, TrainingArguments
 from sklearn.metrics import classification_report
 import gc
+import argparse
+
+
+parser = argparse.ArgumentParser(description="category parser")
+parser.add_argument("-ci","--category_idx", type=int, default=0,choices=[0,1,2,3,4],help="category index")
+args = parser.parse_args()
 model_name = 'google/vit-base-patch16-224'
 
 DEVICE="cuda:1"
@@ -38,7 +44,8 @@ setAllSeeds(42)
 
 df = pd.read_csv("train.csv")
 categories=df["Category"].unique()
-category=categories[4]
+
+category=categories[args.category_idx]
 df = df[df["Category"]==category]
 
 
@@ -52,14 +59,14 @@ for i in range(1,11):
         trackNum.append(len(uniName))
 
 df = df.drop(delCol,axis=1)
-df = df.fillna("NA")
+# df = df.fillna("NA")
 
 id2label={}
 label2id={}
 attrs={}
 total_attr=len(df.columns)
 for i in range(3,total_attr):
-    labels=df[df.columns[i]].unique()
+    labels=df[df.columns[i]].dropna().unique()
     id2label[i-3]={k:labels[k] for k in range(len(labels))}
     label2id[i-3]={labels[k]:k for k in range(len(labels))}
     attrs[i-3]=df.columns[i]
@@ -69,7 +76,11 @@ print(attrs)
 
 def categorize(example):
     for i in attrs:
-        example[attrs[i]]=label2id[i][example[attrs[i]]]
+        # print(example[attrs[i]],type(example[attrs[i]]),pd.isna(example[attrs[i]]))
+        if not pd.isna(example[attrs[i]]):
+            example[attrs[i]]=label2id[i][example[attrs[i]]]
+        else:
+            example[attrs[i]]=-100
     return example
 df=df.apply(categorize,axis=1)
 
@@ -148,7 +159,12 @@ def compute_metrics(pred):
     labels=pred.label_ids
     probs = np.stack([np.argmax(logit,axis=1) for logit in logits])
     probs=probs.T
-    report=classification_report(labels.flatten(),probs.flatten(),output_dict=True)
+    labels=labels.flatten()
+    probs=probs.flatten()
+    non_padding_indices = [i for i, label in enumerate(labels) if label != -100]
+    labels = [labels[i] for i in non_padding_indices]
+    probs = [probs[i] for i in non_padding_indices]
+    report=classification_report(labels,probs,output_dict=True)
     return {'accuracy': report['accuracy'],"macro avg f1":report['macro avg']['f1-score']}
 
 config=ViTConfig.from_pretrained(model_name)
@@ -157,8 +173,8 @@ model = MultiLabelMultiClassViT.from_pretrained(model_name,config=config)
 
 training_args = TrainingArguments(
   output_dir="./vit/"+category,
-  per_device_train_batch_size=48,
-  per_device_eval_batch_size=48,
+  per_device_train_batch_size=64,
+  per_device_eval_batch_size=64,
   evaluation_strategy="epoch",
   save_strategy="epoch",
   num_train_epochs=5,
@@ -181,7 +197,7 @@ trainer = Trainer(
     tokenizer=processor,
 )
 trainer.train()
-trainer.save_model(f"./vit/{category}/final")
+trainer.save_model(f"./vit2/{category}/final")
 trainer.evaluate(test_fashion_data)
 
 del model, trainer

@@ -1,26 +1,35 @@
 import os
-# os.environ['CUDA_VISIBLE_DEVICES'] = '0'
+# os.environ['CUDA_VISIBLE_DEVICES'] = '1'
 import torch
 import pandas as pd
-from PIL import ImageDraw, ImageFont, Image
+from PIL import Image
 import numpy as np
-import matplotlib.pyplot as plt
-from torch.utils.data import Dataset, DataLoader
-from torchvision import transforms, utils
+from torch.utils.data import Dataset
 import torch
 import torch.nn as nn
-from transformers import ViTModel
+# Ignore warnings
 import warnings
 warnings.filterwarnings("ignore")
 import random
-import time
-from transformers import ViTImageProcessor
+from transformers import (
+    ViTImageProcessor,
+    ViTModel,
+    ViTConfig,
+    ViTPreTrainedModel,
+    Trainer, 
+    TrainingArguments,
+    )
+from sklearn.model_selection import train_test_split
 import sys
 from typing import List
-from transformers import ViTConfig,ViTPreTrainedModel
-from transformers import Trainer, TrainingArguments
 from sklearn.metrics import classification_report
 import gc
+import argparse
+
+
+parser = argparse.ArgumentParser(description="category parser")
+parser.add_argument("-ci","--category_idx", type=int, default=0,choices=[0,1,2,3,4],help="category index")
+args = parser.parse_args()
 
 DEVICE="cuda:0"
 def setAllSeeds(seed):
@@ -34,7 +43,7 @@ setAllSeeds(42)
 df = pd.read_csv("train.csv")
 categories=df["Category"].unique()
 print(categories)
-category=categories[4]
+category=categories[args.category_idx]
 df = df[df["Category"]==category]
 test_df = pd.read_csv("test.csv")
 test_df = test_df[test_df["Category"]==category]
@@ -45,7 +54,7 @@ label2id={}
 attrs={}
 total_attr=len(df.columns)
 for i in range(3,total_attr):
-    labels=df[df.columns[i]].unique()
+    labels=df[df.columns[i]].dropna().unique()
     id2label[i-3]={k:labels[k] for k in range(len(labels))}
     label2id[i-3]={labels[k]:k for k in range(len(labels))}
     attrs[i-3]=df.columns[i]
@@ -169,8 +178,8 @@ for i in range(10):
         else:
             x.append(np.nan)
     test_df[f"attr_{i+1}"]=x
-
-test_df.to_csv(f"preds/{category}.csv",index=False)
+print(test_df.isna().sum())
+test_df.to_csv(f"preds/{category}.csv",index=False)()
 
 del model, trainer
 torch.cuda.empty_cache()
