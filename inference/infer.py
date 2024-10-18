@@ -146,7 +146,7 @@ training_args = TrainingArguments(
   save_total_limit=1,
   remove_unused_columns=False,
   push_to_hub=False,
-  report_to='wandb',
+  report_to='none',
   load_best_model_at_end=True,
 )
 
