@@ -31,7 +31,7 @@ parser = argparse.ArgumentParser(description="category parser")
 parser.add_argument("-ci","--category_idx", type=int, default=0,choices=[0,1,2,3,4],help="category index")
 args = parser.parse_args()
 model_name = 'google/vit-base-patch16-224'
-
+save_dir="./vit3/"
 DEVICE="cuda:1"
 def setAllSeeds(seed):
   os.environ['MY_GLOBAL_SEED'] = str(seed)
@@ -47,7 +47,7 @@ categories=df["Category"].unique()
 
 category=categories[args.category_idx]
 df = df[df["Category"]==category]
-
+save_dir+=category
 
 delCol = []
 trackNum = []
@@ -87,8 +87,11 @@ df=df.apply(categorize,axis=1)
 processor = ViTImageProcessor.from_pretrained(model_name)
 
 #train test split
-train_df, val_df = train_test_split(df, test_size=0.3)
-val_df,test_df=train_test_split(val_df,test_size=0.33)
+# train_df, val_df = train_test_split(df, test_size=0.3)
+# val_df,test_df=train_test_split(val_df,test_size=0.33)
+train_df=df
+val_df=df
+test_df=df
 
 
 class CustomFashionManager(Dataset):
@@ -172,11 +175,12 @@ config=CustomConfig(num_classes_per_label=trackNum,**config.to_dict())
 model = MultiLabelMultiClassViT.from_pretrained(model_name,config=config)
 
 training_args = TrainingArguments(
-  output_dir="./vit/"+category,
-  per_device_train_batch_size=64,
-  per_device_eval_batch_size=64,
+  output_dir="./vit3/"+category,
+  per_device_train_batch_size=128,
+  per_device_eval_batch_size=128,
   evaluation_strategy="epoch",
   save_strategy="epoch",
+  logging_strategy="epoch",
   num_train_epochs=5,
   fp16=True,
   learning_rate=2e-4,
@@ -197,8 +201,8 @@ trainer = Trainer(
     tokenizer=processor,
 )
 trainer.train()
-trainer.save_model(f"./vit2/{category}/final")
-trainer.evaluate(test_fashion_data)
+trainer.save_model(f"./vit3/{category}/final")
+# trainer.evaluate(test_fashion_data)
 
 del model, trainer
 torch.cuda.empty_cache()
