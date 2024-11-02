@@ -13,3 +13,11 @@ Train
 Generate
 Combine
 ```
+Test Split
+```
+Men Tshirts	3787
+Sarees	7102
+Kurtis	2460
+Women Tshirts	9931
+Women Tops & Tunics	6925
+```
