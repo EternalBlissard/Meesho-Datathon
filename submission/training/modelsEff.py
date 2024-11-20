@@ -54,7 +54,7 @@ class MultiLabelMultiClassEff(EfficientNetPreTrainedModel):
             nn.Linear(49, num_classes)) 
             for num_classes in config.num_classes_per_label
         ])
-        self.weights = torch.tensor([1,10],dtype=torch.float32).to(DEVICE)
+        # self.weights = torch.tensor([1,10],dtype=torch.float32).to(DEVICE)
         # Initialize weights and apply final processing
         self.post_init()
         
