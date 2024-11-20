@@ -42,7 +42,7 @@ python {Unique_Identifier}_infer.py
 #Generate_Submission
 
 ```
-python combine_infer.py
+python combine_preds.py
 ```
 
 
