@@ -1,0 +1,9 @@
+torch
+torchvision
+pandas
+transformers
+numpy
+wandb
+accelerate
+scikit-learn
+pillow
