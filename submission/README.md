@@ -4,6 +4,7 @@
 ```
 pip install -r -U requirements.txt
 ```
+Must have a <a href='https://wandb.ai'></a>wandb ID to save logs and run the code
 
 #TRAINING
 For Each File in ./training alter the values of line 33 and 34 <br>
