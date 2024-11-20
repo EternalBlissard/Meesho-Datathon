@@ -18,6 +18,12 @@ from transformers import (
     ViTPreTrainedModel,
     Trainer, 
     TrainingArguments,
+    EfficientNetConfig, 
+    EfficientNetModel,
+    EfficientNetPreTrainedModel,
+    TrainingArguments,
+    AutoImageProcessor
+
     )
 from sklearn.model_selection import train_test_split
 import sys
@@ -107,7 +113,7 @@ def categorize(example):
     return example
 df=df.apply(categorize,axis=1)
 
-processor = ViTImageProcessor.from_pretrained(model_name)
+processor = AutoImageProcessor.from_pretrained(model_name)
 
 
 train_df, val_df = train_test_split(df, test_size=0.2, random_state=42)
@@ -172,9 +178,9 @@ def compute_metrics(pred):
     wandb.log({'score': sum(f1s)/len(f1s)})
     return {'score': sum(f1s)/len(f1s), 'macro_f1':sum(macros)/len(macros),'micro_f1':sum(micros)/len(micros)}
 
-config=ViTConfig.from_pretrained(model_name)
+config=EfficientNetConfig.from_pretrained(model_name)
 config=CustomConfig(num_classes_per_label=trackNum,**config.to_dict())
-model = MultiLabelMultiClassViT.from_pretrained(model_name,config=config)
+model = MultiLabelMultiClassEff.from_pretrained(model_name,config=config)
 
 training_args = TrainingArguments(
   output_dir=save_dir+category,
@@ -203,7 +209,7 @@ trainer = Trainer(
     tokenizer=processor,
 )
 trainer.train()
-trainer.save_model(f"{save_dir}{category}/final")
+trainer.save_model(f"{save_dir}{category}_EffAttr8/final")
 # trainer.evaluate(test_fashion_data)
 
 del model, trainer
