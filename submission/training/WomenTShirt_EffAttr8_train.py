@@ -183,7 +183,7 @@ config=CustomConfig(num_classes_per_label=trackNum,**config.to_dict())
 model = MultiLabelMultiClassEff.from_pretrained(model_name,config=config)
 
 training_args = TrainingArguments(
-  output_dir=save_dir+category,
+  output_dir=save_dir+category+"_EffAttr8",
   per_device_train_batch_size=128,
   per_device_eval_batch_size=128,
   evaluation_strategy="epoch",
